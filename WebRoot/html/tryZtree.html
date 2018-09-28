@@ -1,0 +1,333 @@
+
+<!DOCTYPE html>
+<HTML>
+<HEAD>
+	<TITLE> ZTREE DEMO - beforeDrag / onDrag / beforeDrop / onDrop</TITLE>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" href="../../../css/demo.css" type="text/css">
+	<link rel="stylesheet" href="../../../css/zTreeStyle/zTreeStyle.css" type="text/css">
+	<script type="text/javascript" src="./js/jquery-1.4.4.min.js"></script>
+	<script type="text/javascript" src="../../../js/jquery.ztree.all-3.5.js"></script>
+	<script type="text/javascript" src="../../../js/jquery.cookie.js"></script>
+	<SCRIPT type="text/javascript">
+		<!--
+		var zTree, rMenu, selectNode;
+		
+		var setting = {
+			edit: {
+				drag: {
+					autoExpandTrigger: true,
+					prev: dropPrev,
+					inner: dropInner,
+					next: dropNext
+				},
+				enable: true,
+				showRemoveBtn: false,
+				showRenameBtn: false
+			},
+			data: {
+				simpleData: {
+					enable: true
+				}
+			},
+			callback: {
+				onRightClick: onRightClick,
+				onExpand: onExpand,
+				onCollapse: onCollapse,
+				beforeDrag: beforeDrag,
+				beforeDrop: beforeDrop,
+				beforeDragOpen: beforeDragOpen
+			}
+		};
+ 
+		var zNodes =[
+			{ id:'40', pId:'', name:"公司", root:true, open:open, icon:"../../../css/zTreeStyle/img/diy/1_open.png"},
+			{ id:'1', pId:'40', name:"部门1", dep:true, open:false, icon:"../../../css/zTreeStyle/img/diy/1_open.png"},
+			{ id:'11', pId:'1', name:"技术员", pos:true, open:false, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'12', pId:'1', name:"数据员", pos:true, open:false, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'13', pId:'1', name:"安全员", pos:true, open:false, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'14', pId:'11', name:"张三1", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'15', pId:'11', name:"张三2", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'16', pId:'11', name:"张三3", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'17', pId:'12', name:"张三1", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'18', pId:'12', name:"张三2", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'19', pId:'12', name:"张三3", emp:true, dropInner:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'2', pId:'40', name:"部门2", dep:true, open:false, icon:"../../../css/zTreeStyle/img/diy/1_open.png"},
+			{ id:'21', pId:'2', name:"行政专员", pos:true, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'22', pId:'2', name:"行政主管", pos:true, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"},
+			{ id:'23', pId:'2', name:"人事专员", pos:true, drag:false, icon:"../../../css/zTreeStyle/img/diy/2.png"}
+		];
+ 
+		function dropPrev(treeId, nodes, targetNode) {
+			return false;
+		}
+		function dropInner(treeId, nodes, targetNode) {
+			if (targetNode && targetNode.dropInner === false) {
+				return false;
+			} else {
+				for (var i=0,l=curDragNodes.length; i<l; i++) {
+					if (!targetNode && curDragNodes[i].dropRoot === false) {
+						return false;
+					} else if (curDragNodes[i].parentTId && curDragNodes[i].getParentNode() !== targetNode && curDragNodes[i].getParentNode().childOuter === false) {
+						return false;
+					}else if(curDragNodes[i].emp && !targetNode.pos){
+						return false;
+					}else if(curDragNodes[i].dep && !targetNode.dep){
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		function dropNext(treeId, nodes, targetNode) {
+			return false;
+		}
+ 
+		var curDragNodes, autoExpandNode;
+		function beforeDrag(treeId, treeNodes) {
+			for (var i=0, l=treeNodes.length; i<l; i++) {
+				console.log("beforeDrag" + treeNodes[i].parentTId);
+				if (treeNodes[i].drag === false) {
+					curDragNodes = null;
+					return false;
+				} else if (treeNodes[i].parentTId && treeNodes[i].getParentNode().childDrag === false) {
+					curDragNodes = null;
+					return false;
+				}
+			}
+			curDragNodes = treeNodes;
+			return true;
+		}
+		function beforeDragOpen(treeId, treeNode) {
+			autoExpandNode = treeNode;
+			return true;
+		}
+		function beforeDrop(treeId, treeNodes, targetNode, moveType, isCopy) {
+			if(!targetNode){
+				return false;
+			}
+			return true;
+		}
+		
+		function onRightClick(event, treeId, treeNode) {
+			selectNode = treeNode;
+			if(treeNode && treeNode.root){
+				zTree.selectNode(treeNode);
+				showRMenu("root", event.clientX, event.clientY);
+			}
+			else if (treeNode && treeNode.dep) {
+				zTree.selectNode(treeNode);
+				showRMenu("dep", event.clientX, event.clientY);
+			}
+			else if (treeNode && treeNode.pos) {
+				zTree.selectNode(treeNode);
+				showRMenu("pos", event.clientX, event.clientY);
+			}
+			else if(treeNode && treeNode.emp){
+				zTree.selectNode(treeNode);
+				showRMenu("emp", event.clientX, event.clientY);
+			}
+		}
+ 
+		function onExpand(event, treeId, treeNode){
+			var cookie = $.cookie("z_tree");
+			
+			var z_tree = null;
+			if(cookie){
+				z_tree = JSON.parse(cookie);
+			}
+			
+			if(!z_tree){
+				z_tree = new Array();
+			}
+			if(jQuery.inArray(treeNode.id, z_tree)<0){
+				z_tree.push(treeNode.id);
+			}
+			
+			
+			$.cookie("z_tree", JSON.stringify(z_tree))
+		}
+		
+		function onCollapse(event, treeId, treeNode){
+			var cookie = $.cookie("z_tree");
+			
+			var z_tree = null;
+			if(cookie){
+				z_tree = JSON.parse(cookie);
+			}
+			
+			if(!z_tree){
+				z_tree = new Array();
+			}
+			var index = jQuery.inArray(treeNode.id, z_tree);
+			
+			z_tree.splice(index, 1);
+			
+			$.cookie("z_tree", JSON.stringify(z_tree))
+		}
+		
+		function showRMenu(type, x, y) {
+			$("#rMenu ul").show();
+			if (type=="root") {
+				$("#m_addDep").show();
+				$("#m_addPos").hide();
+				$("#m_addEmp").hide();
+				$("#m_delPos").hide();
+				$("#m_delDep").hide();
+				$("#m_delEmp").hide();
+			} else if(type=="dep"){
+				$("#m_addDep").show();
+				$("#m_addPos").show();
+				$("#m_addEmp").hide();
+				$("#m_delPos").hide();
+				$("#m_delDep").show();
+				$("#m_delEmp").hide();
+			}else if(type=="pos"){
+				$("#m_addDep").hide();
+				$("#m_addPos").hide();
+				$("#m_addEmp").show();
+				$("#m_delPos").show();
+				$("#m_delDep").hide();
+				$("#m_delEmp").hide();
+			}else if(type=="emp"){
+				$("#m_addDep").hide();
+				$("#m_addPos").hide();
+				$("#m_addEmp").hide();
+				$("#m_delPos").hide();
+				$("#m_delDep").hide();
+				$("#m_delEmp").show();
+			}
+			rMenu.css({"top":y+"px", "left":x+"px", "visibility":"visible"});
+ 
+			$("body").bind("mousedown", onBodyMouseDown);
+		}
+		function hideRMenu() {
+			if (rMenu) rMenu.css({"visibility": "hidden"});
+			$("body").unbind("mousedown", onBodyMouseDown);
+		}
+		function onBodyMouseDown(event){
+			if (!(event.target.id == "rMenu" || $(event.target).parents("#rMenu").length>0)) {
+				rMenu.css({"visibility" : "hidden"});
+			}
+		}
+		var addCount = 1;
+		function addDep() {
+			hideRMenu();
+			var newNode = { name:"增加" + (addCount++), dep:true, icon:"../../../css/zTreeStyle/img/diy/1_open.png"};
+			if (zTree.getSelectedNodes()[0]) {
+				newNode.checked = zTree.getSelectedNodes()[0].checked;
+				zTree.addNodes(zTree.getSelectedNodes()[0], newNode);
+			} else {
+				zTree.addNodes(null, newNode);
+			}
+		}
+		
+		function addPos() {
+			hideRMenu();
+			var newNode = { name:"增加" + (addCount++), pos:true, icon:"../../../css/zTreeStyle/img/diy/2.png"};
+			if (zTree.getSelectedNodes()[0]) {
+				newNode.checked = zTree.getSelectedNodes()[0].checked;
+				zTree.addNodes(zTree.getSelectedNodes()[0], newNode);
+			} else {
+				zTree.addNodes(null, newNode);
+			}
+		}
+		
+		function addEmp() {
+			hideRMenu();
+			var newNode = { name:"增加" + (addCount++), emp:true, icon:"../../../css/zTreeStyle/img/diy/2.png"};
+			if (zTree.getSelectedNodes()[0]) {
+				newNode.checked = zTree.getSelectedNodes()[0].checked;
+				zTree.addNodes(zTree.getSelectedNodes()[0], newNode);
+			} else {
+				zTree.addNodes(null, newNode);
+			}
+		}		
+		
+		function removeDep() {
+			hideRMenu();
+			var nodes = zTree.getSelectedNodes();
+			if (nodes && nodes.length>0) {
+				if (nodes[0].children && nodes[0].children.length > 0) {
+					var msg = "要删除的节点是父节点，如果删除将连同子节点一起删掉。\n\n请确认！";
+					if (confirm(msg)==true){
+						zTree.removeNode(nodes[0]);
+					}
+				} else {
+					zTree.removeNode(nodes[0]);
+				}
+			}
+		}
+		
+		function removePos() {
+			hideRMenu();
+			var nodes = zTree.getSelectedNodes();
+			if (nodes && nodes.length>0) {
+				if (nodes[0].children && nodes[0].children.length > 0) {
+					var msg = "要删除的节点是父节点，如果删除将连同子节点一起删掉。\n\n请确认！";
+					if (confirm(msg)==true){
+						zTree.removeNode(nodes[0]);
+					}
+				} else {
+					zTree.removeNode(nodes[0]);
+				}
+			}
+		}
+		
+		function removeEmp() {
+			hideRMenu();
+			var nodes = zTree.getSelectedNodes();
+			if (nodes && nodes.length>0) {
+				zTree.removeNode(nodes[0]);
+			}
+		}
+		
+		jQuery(document).ready(function(){
+			$.fn.zTree.init($("#treeDemo"), setting, zNodes);
+			zTree = $.fn.zTree.getZTreeObj("treeDemo");
+			rMenu = $("#rMenu");
+			
+			var cookie = $.cookie("z_tree");
+			if(cookie){
+				z_tree = JSON.parse(cookie);
+				
+				for(var i=0; i< z_tree.length; i++){
+					var node = zTree.getNodeByParam('id', z_tree[i])
+					zTree.expandNode(node, true)
+				}
+			}
+		});
+		//-->
+	</SCRIPT>
+	<style type="text/css">
+		div#rMenu {position:absolute; visibility:hidden; top:0; background-color: #555;text-align: left;padding: 2px;}
+		div#rMenu ul li{
+			margin: 1px 0;
+			padding: 0 5px;
+			cursor: pointer;
+			list-style: none outside none;
+			background-color: #DFDFDF;
+		}
+	</style>
+</HEAD>
+ 
+<BODY>
+<div class="content_wrap">
+	<div class="zTreeDemoBackground left">
+		<ul id="treeDemo" class="ztree"></ul>
+	</div>
+</div>
+<div id="rMenu">
+	<ul>
+		<li id="m_addDep" onclick="addDep();">增加部门</li>
+		<li id="m_editDep" onclick="editDep();">调整部门</li>
+		<li id="m_addPos" onclick="addPos();">增加岗位</li>
+		<li id="m_editPos" onclick="editPos();">调整岗位</li>
+		<li id="m_addEmp" onclick="addEmp();">增加人员</li>
+		<li id="m_delPos" onclick="removePos();">删除岗位</li>
+		<li id="m_delDep" onclick="removeDep();">删除部门</li>
+		<li id="m_delEmp" onclick="removeEmp();">删除人员</li>
+	</ul>
+</div>
+</BODY>
+</HTML>
